@@ -12,8 +12,14 @@ import com.abs.huerto_hogar.repository.UsuarioRepository;
 @Service // Define que la clase es un servicio de Spring
 public class UsuarioService {
 
+    private static final String SOLO_LETRAS_REGEX = "^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\s]+$";
+    private static final String SOLO_NUMEROS_REGEX = "^[0-9]+$";
+
     @Autowired // Autowire el repositorio de Usuario y lo inyecta en la clase
     private UsuarioRepository usuarioRepository;
+
+    @Autowired // Autowire el encoder de passwords y lo inyecta en la clase
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public Usuario actualizarUsuario(Long id, Usuario usuarioActualizado) { // Actualizar usuario
 
@@ -44,7 +50,8 @@ public class UsuarioService {
             if (usuarioActualizado.getContrasenna().length() < 8) {
                 throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres.");
             }
-            usuarioExistente.setContrasenna(usuarioActualizado.getContrasenna());
+            String contrasennaEncriptada = passwordEncoder.encode(usuarioActualizado.getContrasenna());
+            usuarioExistente.setContrasenna(contrasennaEncriptada);
         }
 
         if (usuarioActualizado.getNombre() == null || usuarioActualizado.getNombre().isBlank()) {
@@ -53,6 +60,26 @@ public class UsuarioService {
 
         if (usuarioActualizado.getApellido() == null || usuarioActualizado.getApellido().isBlank()) {
             throw new IllegalArgumentException("El apellido no puede estar en blanco.");
+        }
+
+        if (!usuarioActualizado.getNombre().matches(SOLO_LETRAS_REGEX)) {
+            throw new IllegalArgumentException("El nombre solo puede contener letras y espacios.");
+        }
+
+        if (!usuarioActualizado.getApellido().matches(SOLO_LETRAS_REGEX)) {
+            throw new IllegalArgumentException("El apellido solo puede contener letras y espacios.");
+        }
+
+        if (!usuarioActualizado.getComuna().matches(SOLO_LETRAS_REGEX)) {
+            throw new IllegalArgumentException("La comuna solo puede contener letras y espacios.");
+        }
+
+        if (!usuarioActualizado.getTelefono().matches(SOLO_NUMEROS_REGEX)) {
+            throw new IllegalArgumentException("El teléfono solo debe contener números.");
+        }
+
+        if (usuarioActualizado.getRegion() == null) {
+            throw new IllegalArgumentException("La región no puede estar en blanco.");
         }
 
         usuarioExistente.setNombre(usuarioActualizado.getNombre());
@@ -71,7 +98,6 @@ public class UsuarioService {
         if (usuario.getEmail() == null || usuario.getEmail().isBlank()) {
             throw new IllegalArgumentException("El email no puede estar en blanco.");
         }
-
         if (usuario.getNombre() == null || usuario.getNombre().isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar en blanco.");
         }
@@ -90,10 +116,15 @@ public class UsuarioService {
         if (usuario.getComuna() == null || usuario.getComuna().isBlank()) {
             throw new IllegalArgumentException("La comuna no puede estar en blanco.");
         }
+        if (!usuario.getComuna().matches(SOLO_LETRAS_REGEX)) {
+            throw new IllegalArgumentException("La comuna solo puede contener letras y espacios.");
+        }
         if (usuario.getRegion() == null) {
             throw new IllegalArgumentException("La región no puede estar en blanco.");
         }
-
+        if (!usuario.getNombre().matches(SOLO_LETRAS_REGEX)) {
+            throw new IllegalArgumentException("El nombre solo puede contener letras y espacios.");
+        }
         if (usuario.getRol() == null || usuario.getRol().isBlank()) {
             usuario.setRol("usuario"); // Asigna rol por defecto "usuario"
         }
@@ -109,6 +140,9 @@ public class UsuarioService {
         if (usuario.getContrasenna().length() < 8) {
             throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres.");
         }
+
+        String contrasennaEncriptada = passwordEncoder.encode(usuario.getContrasenna());
+        usuario.setContrasenna(contrasennaEncriptada);
 
         return usuarioRepository.save(usuario);
 
@@ -138,4 +172,18 @@ public class UsuarioService {
     public Optional<Usuario> buscarPorEmail(String email) { // Obtener usuario por email
         return usuarioRepository.findByEmail(email);
     }
+
+    public Usuario login(String email, String contrasenna) { // Login
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Email o contraseña incorrectos."));
+
+        boolean passwordOk = passwordEncoder.matches(contrasenna, usuario.getContrasenna());
+        if (!passwordOk) {
+            throw new IllegalArgumentException("Email o contraseña incorrectos.");
+        }
+
+        return usuario;
+
+    }
+
 }

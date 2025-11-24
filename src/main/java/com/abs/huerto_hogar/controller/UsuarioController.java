@@ -51,4 +51,9 @@ public class UsuarioController {
     public Usuario actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
         return usuarioService.actualizarUsuario(id, usuarioActualizado);
     }
+
+    @PostMapping("/login") // Mapear ruta POST /usuario/login
+    public Usuario login(@RequestBody Usuario login) {
+        return usuarioService.login(login.getEmail(), login.getContrasenna());
+    }
 }
