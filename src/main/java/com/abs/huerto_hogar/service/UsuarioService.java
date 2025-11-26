@@ -1,13 +1,16 @@
 package com.abs.huerto_hogar.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.abs.huerto_hogar.model.Usuario;
 import com.abs.huerto_hogar.repository.UsuarioRepository;
+import com.abs.huerto_hogar.config.EmailService;
 
 @Service // Define que la clase es un servicio de Spring
 public class UsuarioService {
@@ -15,11 +18,52 @@ public class UsuarioService {
     private static final String SOLO_LETRAS_REGEX = "^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\s]+$";
     private static final String SOLO_NUMEROS_REGEX = "^[0-9]+$";
 
+    @Autowired // Autowire el servicio de email y lo inyecta en la clase
+    private EmailService emailService;
+
+    private final Map<String, String> codigosGuardados = new ConcurrentHashMap<>();
+
     @Autowired // Autowire el repositorio de Usuario y lo inyecta en la clase
     private UsuarioRepository usuarioRepository;
 
     @Autowired // Autowire el encoder de passwords y lo inyecta en la clase
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    public void enviarCodigoRecuperacion(String email) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no existe."));
+        String codigo = String.valueOf((int) (Math.random() * 900000) + 100000); // Genera un código de 6 dígitos
+        codigosGuardados.put(email, codigo);
+
+        String texto = "Hola " + usuario.getNombre() + ",\n\n"
+                + "Tu código de recuperación de contraseña es: " + codigo + "\n"
+                + "Huerto Hogar 🌱";
+        emailService.enviarEmail(email, "Código de Recuperación de Contraseña", texto);
+    }
+
+    public void actualizarContrasenna(String email, String codigo, String contrasennaNueva) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Codigo o Correo no válido."));
+
+        String codigoGuardado = codigosGuardados.get(email);
+        if (codigoGuardado == null || !codigoGuardado.equals(codigo)) {
+            throw new IllegalArgumentException("Codigo o Correo no válido.");
+        }
+
+        if (contrasennaNueva == null || contrasennaNueva.isBlank()) {
+            throw new IllegalArgumentException("La contraseña no puede estar en blanco.");
+        }
+
+        if (contrasennaNueva.length() < 8) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres.");
+        }
+
+        String contrasennaEncriptada = passwordEncoder.encode(contrasennaNueva);
+        usuario.setContrasenna(contrasennaEncriptada);
+        usuarioRepository.save(usuario);
+
+        codigosGuardados.remove(email); // Elimina el código una vez usada la recuperación
+    }
 
     public Usuario actualizarUsuario(Long id, Usuario usuarioActualizado) { // Actualizar usuario
 
