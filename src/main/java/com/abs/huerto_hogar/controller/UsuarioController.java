@@ -1,6 +1,7 @@
 package com.abs.huerto_hogar.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -55,5 +56,21 @@ public class UsuarioController {
     @PostMapping("/login") // Mapear ruta POST /usuario/login
     public Usuario login(@RequestBody Usuario login) {
         return usuarioService.login(login.getEmail(), login.getContrasenna());
+    }
+
+    @PostMapping("/recuperar-contrasenna") // Mapear ruta POST /usuario/recuperar-contrasena
+    public String recuperarContrasenna(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        usuarioService.enviarCodigoRecuperacion(email);
+        return "Código de recuperación enviado al correo.";
+    }
+
+    @PutMapping("/actualizar-contrasenna") // Mapear ruta PUT /usuario/actualizar-contrasenna
+    public String actualizarContrasenna(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String codigo = body.get("codigo");
+        String contrasennaNueva = body.get("contrasennaNueva");
+        usuarioService.actualizarContrasenna(email, codigo, contrasennaNueva);
+        return "Contraseña actualizada correctamente.";
     }
 }
