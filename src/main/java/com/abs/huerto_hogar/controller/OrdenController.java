@@ -26,8 +26,13 @@ public class OrdenController {
     // POST /api/orden/guardar
     @PostMapping("/guardar")
     public Orden guardarOrden(@RequestBody Orden orden) {
+
         if (orden.getUsuario() == null || orden.getUsuario().getId() == null) {
             throw new IllegalArgumentException("Debes enviar el id del usuario en la orden.");
+        }
+
+        if (orden.getProductos() == null || orden.getProductos().isEmpty()) {
+            throw new IllegalArgumentException("Debes enviar al menos un producto en la orden.");
         }
 
         Long usuarioId = orden.getUsuario().getId();
