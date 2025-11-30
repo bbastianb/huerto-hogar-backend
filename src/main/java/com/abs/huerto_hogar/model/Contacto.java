@@ -26,7 +26,7 @@ public class Contacto {
     @Column(length = 20)
     private String telefono;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = true, length = 150)
     private String asunto;
 
     @Column(nullable = false, columnDefinition = "TEXT")

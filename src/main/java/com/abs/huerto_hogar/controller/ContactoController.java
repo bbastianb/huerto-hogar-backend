@@ -1,54 +1,61 @@
 package com.abs.huerto_hogar.controller;
 
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.abs.huerto_hogar.model.Contacto;
 import com.abs.huerto_hogar.service.ContactoService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/contacto")
-@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/api/contacto") // 👈 OJO: singular, coincide con el front
+@CrossOrigin(origins = "http://localhost:5173") // cambia si usas otro puerto para Vite
 public class ContactoController {
 
     private final ContactoService service;
 
-    public ContactoController(ContactoService service) {
-        this.service = service;
-    }
-
-    @PostMapping
-    public ResponseEntity<Contacto> crearContacto(@RequestBody Contacto contacto) {
-        Contacto guardado = service.guardar(contacto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
+    public ContactoController(ContactoService contactoService) {
+        this.service = contactoService;
     }
 
     @GetMapping
-    public ResponseEntity<List<Contacto>> listarContactos() {
-        return ResponseEntity.ok(service.listarTodos());
+    public List<Contacto> listar() {
+        return service.listarTodos();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Contacto> buscarPorId(@PathVariable Long id) {
-        Contacto c = service.buscarPorId(id);
-        if (c == null) {
+    public ResponseEntity<Contacto> obtener(@PathVariable Long id) {
+        Contacto contacto = service.buscarPorId(id);
+        if (contacto == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(c);
+        return ResponseEntity.ok(contacto);
+    }
+
+    @PostMapping
+    public ResponseEntity<Contacto> crear(@RequestBody Contacto contacto) {
+
+        // Validaciones mínimas para que no se caiga
+        if (contacto.getNombre() == null || contacto.getNombre().isBlank()
+                || contacto.getEmail() == null || contacto.getEmail().isBlank()
+                || contacto.getMensaje() == null || contacto.getMensaje().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Por si no viene fecha desde el front:
+        if (contacto.getFechaEnvio() == null) {
+            contacto.setFechaEnvio(java.time.LocalDateTime.now());
+        }
+
+        Contacto creado = service.guardar(contacto);
+        return ResponseEntity.ok(creado);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        if (service.buscarPorId(id) == null) {
+            return ResponseEntity.notFound().build();
+        }
         service.eliminar(id);
         return ResponseEntity.noContent().build();
     }
