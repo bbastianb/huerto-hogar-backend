@@ -31,22 +31,18 @@ public class OrdenController {
             throw new IllegalArgumentException("Debes enviar el id del usuario en la orden.");
         }
 
-        if (orden.getProductos() == null || orden.getProductos().isEmpty()) {
-            throw new IllegalArgumentException("Debes enviar al menos un producto en la orden.");
-        }
-
         Long usuarioId = orden.getUsuario().getId();
         return ordenService.saveOrden(orden, usuarioId);
     }
 
     // PUT /api/orden/actualizar-estado/{idOrden}
     @PutMapping("/actualizar-estado/{idOrden}")
-    public Orden actualizarEstado(
+    public Orden actualizarEstadoEnvio(
             @PathVariable Long idOrden,
             @RequestBody Map<String, String> body) {
 
         String nuevoEstado = body.get("estado");
-        return ordenService.updateOrden(idOrden, nuevoEstado);
+        return ordenService.updateEstadoEnvio(idOrden, nuevoEstado);
     }
 
     // DELETE /api/orden/eliminar/{idOrden}
