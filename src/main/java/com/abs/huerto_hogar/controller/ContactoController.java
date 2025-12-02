@@ -46,7 +46,7 @@ public class ContactoController {
             @ApiResponse(responseCode = "200", description = "Mensaje encontrado"),
             @ApiResponse(responseCode = "404", description = "No existe un mensaje con ese ID")
     })
-    @GetMapping("/{id}")
+    @GetMapping("/buscar/{id}")
     public ResponseEntity<Contacto> obtener(@PathVariable Long id) {
 
         Contacto contacto = service.buscarPorId(id);
@@ -67,7 +67,7 @@ public class ContactoController {
             @ApiResponse(responseCode = "200", description = "Mensaje creado correctamente"),
             @ApiResponse(responseCode = "400", description = "Datos inválidos o incompletos")
     })
-    @PostMapping
+    @PostMapping("/crear")
     public ResponseEntity<Contacto> crear(@RequestBody Contacto contacto) {
 
         // Validaciones mínimas
@@ -95,7 +95,7 @@ public class ContactoController {
             @ApiResponse(responseCode = "204", description = "Mensaje eliminado correctamente"),
             @ApiResponse(responseCode = "404", description = "No existe un mensaje con ese ID")
     })
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
 
         if (service.buscarPorId(id) == null) {
