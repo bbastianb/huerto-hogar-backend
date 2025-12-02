@@ -21,7 +21,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.Data;
 
 @RestController
 @RequestMapping("api/usuario")
@@ -115,25 +114,37 @@ public class UsuarioController {
     // ─────────────────────────────────────────────
     // POST /api/usuario/login
     // ─────────────────────────────────────────────
-    @Operation(summary = "Iniciar sesión", description = "Autentica un usuario utilizando email y contraseña. Devuelve token JWT y datos del usuario.")
+    // @Operation(summary = "Iniciar sesión", description = "Autentica un usuario
+    // utilizando email y contraseña. Devuelve token JWT y datos del usuario.")
+    // @ApiResponses({
+    // @ApiResponse(responseCode = "200", description = "Inicio de sesión exitoso"),
+    // @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
+    // })
+    // @PostMapping("/login")
+    // public LoginResponse login(@RequestBody Usuario login) {
+
+    // 1) Autenticar usuario (usa PasswordEncoder por dentro del servicio)
+    // Usuario usuario = usuarioService.login(login.getEmail(),
+    // login.getContrasenna());
+
+    // 2) Generar token JWT
+    // String token = jwtUtil.generateToken(usuario);
+
+    // 3) Armar respuesta { token, usuario }
+    // LoginResponse response = new LoginResponse();
+    // response.setToken(token);
+    // response.setUsuario(usuario);
+    // return response;
+    // }
+
+    @Operation(summary = "Iniciar sesión", description = "Autentica un usuario utilizando email y contraseña.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Inicio de sesión exitoso"),
             @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
     })
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody Usuario login) {
-
-        // 1) Autenticar usuario (usa PasswordEncoder por dentro del servicio)
-        Usuario usuario = usuarioService.login(login.getEmail(), login.getContrasenna());
-
-        // 2) Generar token JWT
-        String token = jwtUtil.generateToken(usuario);
-
-        // 3) Armar respuesta { token, usuario }
-        LoginResponse response = new LoginResponse();
-        response.setToken(token);
-        response.setUsuario(usuario);
-        return response;
+    public Usuario login(@RequestBody Usuario login) {
+        return usuarioService.login(login.getEmail(), login.getContrasenna());
     }
 
     // ─────────────────────────────────────────────
@@ -168,9 +179,10 @@ public class UsuarioController {
         return "Contraseña actualizada correctamente.";
     }
 
-    @Data
-    public static class LoginResponse {
-        private String token;
-        private Usuario usuario;
-    }
+    // @Data
+    // public static class LoginResponse {
+    // private String token;
+    // private Usuario usuario;
+    // }
+
 }
