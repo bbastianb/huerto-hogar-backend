@@ -44,7 +44,7 @@ public class ProductoController {
     }
 
     // ─────────────────────────────────────────────
-    // GET /api/productos/{id}
+    // GET /api/productos/buscar/{id}
     // ─────────────────────────────────────────────
     @Operation(
         summary = "Obtener un producto por ID",
@@ -54,8 +54,8 @@ public class ProductoController {
         @ApiResponse(responseCode = "200", description = "Producto encontrado"),
         @ApiResponse(responseCode = "404", description = "No existe un producto con ese ID")
     })
-    @GetMapping("/{id}")
-    public ResponseEntity<Producto> obtener(@PathVariable String id){
+    @GetMapping("/buscar/{id}")
+    public ResponseEntity<Producto> buscarProducto(@PathVariable String id){
         Producto producto = service.buscarPorId(id);
         if(producto == null){
             return ResponseEntity.notFound().build();
@@ -64,7 +64,7 @@ public class ProductoController {
     }
 
     // ─────────────────────────────────────────────
-    // POST /api/productos
+    // POST /api/productos/crear
     // ─────────────────────────────────────────────
     @Operation(
         summary = "Crear un nuevo producto",
@@ -74,8 +74,8 @@ public class ProductoController {
         @ApiResponse(responseCode = "200", description = "Producto creado correctamente"),
         @ApiResponse(responseCode = "400", description = "El ID del producto es requerido o inválido")
     })
-    @PostMapping
-    public ResponseEntity<Producto> crear(@RequestBody Producto producto) {
+    @PostMapping("/crear")
+    public ResponseEntity<Producto> crearProducto(@RequestBody Producto producto) {
         if (producto.getId() == null || producto.getId().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
@@ -84,7 +84,7 @@ public class ProductoController {
     }
 
     // ─────────────────────────────────────────────
-    // PUT /api/productos/{id}
+    // PUT /api/productos/actualizar/{id}
     // ─────────────────────────────────────────────
     @Operation(
         summary = "Actualizar un producto existente",
@@ -95,8 +95,8 @@ public class ProductoController {
         @ApiResponse(responseCode = "200", description = "Producto actualizado correctamente"),
         @ApiResponse(responseCode = "404", description = "No existe un producto con ese ID")
     })
-    @PutMapping("/{id}")
-    public ResponseEntity<Producto> actualizar(
+    @PutMapping("/actualizar/{id}")
+    public ResponseEntity<Producto> actualizarProducto(
             @PathVariable String id,
             @RequestBody Producto producto
     ) {
@@ -110,7 +110,7 @@ public class ProductoController {
     }
 
     // ─────────────────────────────────────────────
-    // DELETE /api/productos/{id}
+    // DELETE /api/productos/eliminar/{id}
     // ─────────────────────────────────────────────
     @Operation(
         summary = "Eliminar un producto",
@@ -120,8 +120,8 @@ public class ProductoController {
         @ApiResponse(responseCode = "204", description = "Producto eliminado correctamente"),
         @ApiResponse(responseCode = "404", description = "No existe un producto con ese ID")
     })
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable String id) {
+    @DeleteMapping("/eliminar/{id}")
+    public ResponseEntity<Void> eliminarProducto(@PathVariable String id) {
         if (service.buscarPorId(id) == null) {
             return ResponseEntity.notFound().build();
         }
