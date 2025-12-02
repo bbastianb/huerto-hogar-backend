@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.abs.huerto_hogar.model.Usuario;
+import com.abs.huerto_hogar.security.JwtUtil;
 import com.abs.huerto_hogar.service.UsuarioService;
+
+import lombok.Data;
 
 @RestController // Define que la clase es un controlador de REST
 @RequestMapping("api/usuario") // Mapear rutas a la clase
@@ -22,6 +25,9 @@ public class UsuarioController {
 
     @Autowired // Autowire el servicio de Usuario y lo inyecta en la clase
     private UsuarioService usuarioService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/guardar") // Mapear ruta POST /usuario/guardar
     public Usuario guardarUsuario(@RequestBody Usuario usuario) {
@@ -53,9 +59,17 @@ public class UsuarioController {
         return usuarioService.actualizarUsuario(id, usuarioActualizado);
     }
 
-    @PostMapping("/login") // Mapear ruta POST /usuario/login
-    public Usuario login(@RequestBody Usuario login) {
-        return usuarioService.login(login.getEmail(), login.getContrasenna());
+    @PostMapping("/login")
+    public LoginResponse login(@RequestBody Usuario login) {
+
+        Usuario usuario = usuarioService.login(login.getEmail(), login.getContrasenna());
+
+        String token = jwtUtil.generateToken(usuario);
+
+        LoginResponse response = new LoginResponse();
+        response.setToken(token);
+        response.setUsuario(usuario);
+        return response;
     }
 
     @PostMapping("/recuperar-contrasenna") // Mapear ruta POST /usuario/recuperar-contrasena
@@ -72,5 +86,11 @@ public class UsuarioController {
         String contrasennaNueva = body.get("contrasennaNueva");
         usuarioService.actualizarContrasenna(email, codigo, contrasennaNueva);
         return "Contraseña actualizada correctamente.";
+    }
+
+    @Data
+    public static class LoginResponse {
+        private String token;
+        private Usuario usuario;
     }
 }
