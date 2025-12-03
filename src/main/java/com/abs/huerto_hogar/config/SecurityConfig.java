@@ -1,5 +1,7 @@
 package com.abs.huerto_hogar.config;
 
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,119 +12,147 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.abs.huerto_hogar.security.JwtAuthenticationEntryPoint;
 import com.abs.huerto_hogar.security.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
 
 @Configuration
-@EnableWebSecurity
-@RequiredArgsConstructor
+@EnableWebSecurity // Activo la seguridad web de Spring Security
+@RequiredArgsConstructor // Lombok me genera un constructor con los campos final
 public class SecurityConfig {
 
+        // Inyecto el filtro JWT que procesa el token en cada request
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+        // Inyecto mi entry point personalizado para manejar errores 401
+        private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+        // Definicion de los endpoints protegidos y configuración general de seguridad
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
-                                // JWT = stateless
+                                // Configuro CORS con mi configuración personalizada
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
+                                // Configuro cómo manejar los errores de autenticación (cuando no hay usuario
+                                // válido)
+                                .exceptionHandling(ex -> ex
+                                                // Cuando alguien no está autenticado y quiere entrar a algo protegido,
+                                                // delego en mi JwtAuthenticationEntryPoint
+                                                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
                                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                // Aquí defino qué rutas son públicas y qué rutas requieren permisos/roles
                                 .authorizeHttpRequests(auth -> auth
-
-                                                // ENDPOINTS PÚBLICOS
-
-                                                // Swagger / OpenAPI
                                                 .requestMatchers(
+                                                                "/swagger-ui.html",
                                                                 "/swagger-ui/**",
                                                                 "/v3/api-docs/**",
-                                                                "/swagger-ui.html")
+                                                                "/swagger-resources/**",
+                                                                "/webjars/**")
+                                                .permitAll() // A estas rutas puede entrar cualquiera, sin token
+
+                                                // Endpoints públicos de usuario
+                                                // Login: el usuario aún no tiene token, así que debe ser público
+                                                .requestMatchers(HttpMethod.POST, "/api/usuario/login").permitAll()
+                                                // Registro de usuario (crear cuenta)
+                                                .requestMatchers(HttpMethod.POST, "/api/usuario/guardar").permitAll()
+                                                // Recuperación de contraseña
+                                                .requestMatchers(HttpMethod.POST, "/api/usuario/recuperar-contrasenna")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.PUT, "/api/usuario/actualizar-contrasenna")
                                                 .permitAll()
 
-                                                // Usuario públicos (registro / login / recuperar / actualizar
-                                                // contraseña)
-                                                .requestMatchers(
-                                                                "/api/usuario/login",
-                                                                "/api/usuario/guardar",
-                                                                "/api/usuario/recuperar-contrasenna",
-                                                                "/api/usuario/actualizar-contrasenna")
-                                                .permitAll()
-
-                                                // Contacto público (formulario de contacto)
+                                                // Endpoint público de contacto
+                                                // Cualquiera puede enviar un mensaje de contacto
                                                 .requestMatchers(HttpMethod.POST, "/api/contacto/crear").permitAll()
 
-                                                // Catálogo de productos público (solo lectura)
-                                                .requestMatchers(
-                                                                HttpMethod.GET,
-                                                                "/api/productos",
-                                                                "/api/productos/buscar/**")
-                                                .permitAll()
+                                                // Productos públicos (catálogo)
+                                                // Permito ver productos sin estar logueado (solo lectura GET)
+                                                .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
 
-                                                // RUTAS CLIENTE (rol "usuario")
+                                                // ENDPOINTS PROTEGIDOS POR ROLES
 
-                                                // Crear orden desde el checkout
-                                                .requestMatchers(
-                                                                HttpMethod.POST,
-                                                                "/api/orden/guardar")
-                                                .hasRole("usuario")
+                                                .requestMatchers(HttpMethod.POST, "/api/orden/guardar")
+                                                .hasAnyAuthority("ROLE_usuario", "ROLE_admin")
 
-                                                // 3. RUTAS ADMIN (rol "admin")
+                                                // Rutas exclusivas para admin
 
-                                                // Gestión de productos
-                                                .requestMatchers(
-                                                                HttpMethod.POST,
-                                                                "/api/productos/crear")
-                                                .hasRole("admin")
-                                                .requestMatchers(
-                                                                HttpMethod.PUT,
-                                                                "/api/productos/actualizar/**")
-                                                .hasRole("admin")
-                                                .requestMatchers(
-                                                                HttpMethod.DELETE,
-                                                                "/api/productos/eliminar/**")
-                                                .hasRole("admin")
+                                                // Solo admin puede crear, editar o eliminar productos
+                                                .requestMatchers(HttpMethod.POST, "/api/productos/**")
+                                                .hasAuthority("ROLE_admin")
+                                                .requestMatchers(HttpMethod.PUT, "/api/productos/**")
+                                                .hasAuthority("ROLE_admin")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/productos/**")
+                                                .hasAuthority("ROLE_admin")
 
-                                                // Gestión de órdenes (listar, contar, cambiar estado, eliminar, buscar)
-                                                .requestMatchers(
-                                                                "/api/orden/actualizar-estado/**",
-                                                                "/api/orden/eliminar/**")
-                                                .hasRole("admin")
-                                                .requestMatchers(
-                                                                HttpMethod.GET,
-                                                                "/api/orden",
-                                                                "/api/orden/contar",
-                                                                "/api/orden/buscar/**")
-                                                .hasRole("admin")
+                                                // Solo admin puede ver, actualizar o eliminar órdenes
+                                                .requestMatchers(HttpMethod.GET, "/api/orden/**")
+                                                .hasAuthority("ROLE_admin")
+                                                .requestMatchers(HttpMethod.PUT, "/api/orden/**")
+                                                .hasAuthority("ROLE_admin")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/orden/**")
+                                                .hasAuthority("ROLE_admin")
 
-                                                // Gestión de usuarios
-                                                .requestMatchers(
-                                                                "/api/usuario/eliminar/**",
-                                                                "/api/usuario/buscar/**",
-                                                                "/api/usuario/contar",
-                                                                "/api/usuario/actualizar/**",
-                                                                "/api/usuario" // listar usuarios
-                                                ).hasRole("admin")
+                                                // Solo admin puede listar, actualizar o eliminar usuarios
+                                                .requestMatchers(HttpMethod.GET, "/api/usuario/**")
+                                                .hasAuthority("ROLE_admin")
+                                                .requestMatchers(HttpMethod.PUT, "/api/usuario/**")
+                                                .hasAuthority("ROLE_admin")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/usuario/**")
+                                                .hasAuthority("ROLE_admin")
 
-                                                // Gestión de contactos (admin ve y elimina mensajes)
-                                                .requestMatchers(
-                                                                HttpMethod.GET, "/api/contacto",
-                                                                "/api/contacto/buscar/**")
-                                                .hasRole("admin")
-                                                .requestMatchers(
-                                                                HttpMethod.DELETE,
-                                                                "/api/contacto/eliminar/**")
-                                                .hasRole("admin")
+                                                // Solo admin puede ver y eliminar mensajes de contacto
+                                                .requestMatchers(HttpMethod.GET, "/api/contacto/**")
+                                                .hasAuthority("ROLE_admin")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/contacto/**")
+                                                .hasAuthority("ROLE_admin")
 
-                                                // 4. Cualquier otra ruta
+                                                // Cualquier otra ruta que no mencioné arriba requiere estar
+                                                // autenticado,
+                                                // pero no necesariamente un rol específico (basta con tener un token
+                                                // válido)
                                                 .anyRequest().authenticated())
+                                // Agrego mi filtro JWT antes del filtro de autenticación por username y
+                                // password
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
+                // Devuelvo la configuración construida
                 return http.build();
         }
 
+        // Expongo el AuthenticationManager como bean para poder usarlo en
+        // servicios/controladores si lo necesito
         @Bean
         public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
                         throws Exception {
+                // Le pido a Spring que me entregue el AuthenticationManager configurado
                 return config.getAuthenticationManager();
+        }
+
+        // Configuración de CORS para permitir que mi frontend (Vite/React) consuma esta
+        // API
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
+                // Orígenes permitidos (donde corre mi frontend en desarrollo)
+                configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+                // Métodos HTTP permitidos
+                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                // Cabeceras permitidas (acepto todas con "*")
+                configuration.setAllowedHeaders(Arrays.asList("*"));
+                // Permito el envío de cookies/credenciales si fuera necesario
+                configuration.setAllowCredentials(true);
+                // Expongo la cabecera "Authorization" para poder leer el token si hace falta
+                configuration.setExposedHeaders(Arrays.asList("Authorization"));
+
+                // Asocio esta configuración a todas las rutas de mi API (/**)
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
         }
 }
