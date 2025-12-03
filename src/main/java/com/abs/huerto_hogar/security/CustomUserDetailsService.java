@@ -18,19 +18,30 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UsuarioRepository usuarioRepository;
+        private final UsuarioRepository usuarioRepository;
 
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository
-                .findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+        // Método obligatorio de la interfaz UserDetailsService
+        @Override
+        public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+                // Busca un usuario por email en la base de datos
+                // Si no lo encuentra, lanza excepción UsernameNotFoundException
+                Usuario usuario = usuarioRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException(
+                                                "Usuario no encontrado con email: " + email));
 
-        String rol = "ROLE_" + usuario.getRol();
+                // Asegura que el rol tenga el prefijo "ROLE_"
+                // Si en la BD guardaste "admin" o "usuario", aquí se transforma a "ROLE_admin"
+                // o "ROLE_usuario"
+                String authority = usuario.getRol().startsWith("ROLE_")
+                                ? usuario.getRol() // Si ya empieza con ROLE_, lo deja tal cual
+                                : "ROLE_" + usuario.getRol(); // Si no, le agrega el prefijo ROLE_
 
-        return new User(
-                usuario.getEmail(),
-                usuario.getContrasenna(),
-                Collections.singletonList(new SimpleGrantedAuthority(rol)));
-    }
+                // Crea un objeto User (de Spring Security) a partir de Usuario
+                // Este User es el que entiende Spring Security internamente
+                return new User(
+                                usuario.getEmail(), // username -> será el email
+                                usuario.getContrasenna(), // password -> la contraseña encriptada (BCrypt)
+                                Collections.singletonList( // lista de authorities/roles
+                                                new SimpleGrantedAuthority(authority)));
+        }
 }
