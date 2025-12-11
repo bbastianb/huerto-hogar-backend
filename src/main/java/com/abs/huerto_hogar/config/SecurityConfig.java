@@ -56,6 +56,9 @@ public class SecurityConfig {
                                                                 "/webjars/**")
                                                 .permitAll() // A estas rutas puede entrar cualquiera, sin token
 
+                                                .requestMatchers("/api/usuario/guardar").permitAll()
+                                                .requestMatchers("/error").permitAll()
+
                                                 // Endpoints públicos de usuario
                                                 // Login: el usuario aún no tiene token, así que debe ser público
                                                 .requestMatchers(HttpMethod.POST, "/api/usuario/login").permitAll()

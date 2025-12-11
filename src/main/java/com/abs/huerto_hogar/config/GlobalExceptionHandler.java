@@ -17,4 +17,13 @@ public class GlobalExceptionHandler {
         body.put("message", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleException(Exception e) {
+        e.printStackTrace(); // para que veas el stacktrace en la consola
+        Map<String, String> body = new HashMap<>();
+        body.put("type", e.getClass().getName());
+        body.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
 }
