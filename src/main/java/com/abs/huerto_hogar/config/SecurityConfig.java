@@ -69,6 +69,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.PUT, "/api/usuario/actualizar-contrasenna")
                                                 .permitAll()
+                                                .requestMatchers(HttpMethod.PUT, "/api/usuario/*/foto-perfil")
+                                                .permitAll()
 
                                                 // Endpoint público de contacto
                                                 // Cualquiera puede enviar un mensaje de contacto
