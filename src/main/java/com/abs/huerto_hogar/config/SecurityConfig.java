@@ -84,6 +84,8 @@ public class SecurityConfig {
 
                                                 .requestMatchers(HttpMethod.POST, "/api/orden/guardar")
                                                 .hasAnyAuthority("ROLE_usuario", "ROLE_admin")
+                                                .requestMatchers(HttpMethod.PUT, "/api/usuario/**")
+                                                .hasAnyAuthority("ROLE_admin", "ROLE_usuario")
 
                                                 // Rutas exclusivas para admin
 
@@ -105,8 +107,6 @@ public class SecurityConfig {
 
                                                 // Solo admin puede listar, actualizar o eliminar usuarios
                                                 .requestMatchers(HttpMethod.GET, "/api/usuario/**")
-                                                .hasAuthority("ROLE_admin")
-                                                .requestMatchers(HttpMethod.PUT, "/api/usuario/**")
                                                 .hasAuthority("ROLE_admin")
                                                 .requestMatchers(HttpMethod.DELETE, "/api/usuario/**")
                                                 .hasAuthority("ROLE_admin")
