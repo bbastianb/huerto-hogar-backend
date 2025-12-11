@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.abs.huerto_hogar.model.Usuario;
 import com.abs.huerto_hogar.security.JwtUtil;
@@ -72,10 +74,6 @@ public class UsuarioController {
         private UsuarioResponse usuario;
     }
 
-    // ─────────────────────────────────────────────
-    // ENDPOINTS PÚBLICOS
-    // ─────────────────────────────────────────────
-
     @Operation(summary = "Registrar un nuevo usuario", description = "Crea un usuario con los datos enviados en el cuerpo de la solicitud.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuario creado correctamente"),
@@ -98,7 +96,7 @@ public class UsuarioController {
             @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
     })
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) { // 👈 cambia a <?>
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             // Autenticar usuario
             Usuario usuario = usuarioService.autenticarUsuario(
@@ -159,10 +157,6 @@ public class UsuarioController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
-    // ─────────────────────────────────────────────
-    // ENDPOINTS PROTEGIDOS (ADMIN)
-    // ─────────────────────────────────────────────
 
     @Operation(summary = "Eliminar un usuario", description = "Elimina un usuario existente utilizando su ID.")
     @ApiResponses({
@@ -227,9 +221,42 @@ public class UsuarioController {
         }
     }
 
-    // ─────────────────────────────────────────────
-    // MÉTODOS PRIVADOS
-    // ─────────────────────────────────────────────
+    @Operation(summary = "Actualizar foto de perfil", description = "Actualiza la foto de perfil de un usuario usando un archivo de imagen.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Foto actualizada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+            @ApiResponse(responseCode = "400", description = "Archivo inválido")
+    })
+    @PutMapping("/{id}/foto-perfil")
+    public ResponseEntity<UsuarioResponse> actualizarFotoPerfil(
+            @PathVariable Long id,
+            @RequestParam("foto") MultipartFile foto) {
+        try {
+            Usuario usuarioActualizado = usuarioService.actualizarFotoPerfil(id, foto);
+            return ResponseEntity.ok(convertirAResponse(usuarioActualizado));
+        } catch (IllegalArgumentException e) {
+            // Usuario no existe o foto vacía, etc.
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (RuntimeException e) {
+            // Errores al leer el archivo
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "Eliminar foto de perfil", description = "Elimina la foto de perfil del usuario (deja el campo en null).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Foto eliminada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    @DeleteMapping("/{id}/foto-perfil")
+    public ResponseEntity<UsuarioResponse> eliminarFotoPerfil(@PathVariable Long id) {
+        try {
+            Usuario usuarioActualizado = usuarioService.eliminarFotoPerfil(id);
+            return ResponseEntity.ok(convertirAResponse(usuarioActualizado));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 
     private UsuarioResponse convertirAResponse(Usuario usuario) {
         UsuarioResponse response = new UsuarioResponse();

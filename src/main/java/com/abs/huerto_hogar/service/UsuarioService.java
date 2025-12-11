@@ -1,5 +1,6 @@
 package com.abs.huerto_hogar.service;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.abs.huerto_hogar.config.EmailService;
 import com.abs.huerto_hogar.model.Usuario;
@@ -265,5 +267,30 @@ public class UsuarioService {
 
     public Optional<Usuario> buscarPorEmail(String email) {
         return usuarioRepository.findByEmail(email);
+    }
+
+    public Usuario actualizarFotoPerfil(Long id, MultipartFile foto) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no existe."));
+
+        if (foto == null || foto.isEmpty()) {
+            throw new IllegalArgumentException("La foto no puede estar vacía.");
+        }
+
+        try {
+            usuario.setFotoPerfil(foto.getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException("Error al leer la foto de perfil.", e);
+        }
+
+        return usuarioRepository.save(usuario);
+    }
+
+    public Usuario eliminarFotoPerfil(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no existe."));
+
+        usuario.setFotoPerfil(null);
+        return usuarioRepository.save(usuario);
     }
 }

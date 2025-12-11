@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -53,4 +54,8 @@ public class Usuario {
 
     @Column(nullable = false, length = 25)
     private String rol; // "admin" o "usuario"
+
+    @Lob
+    @Column(name = "foto_perfil", columnDefinition = "LONGBLOB", nullable = true)
+    private byte[] fotoPerfil;
 }
