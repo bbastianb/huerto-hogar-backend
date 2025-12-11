@@ -267,6 +267,7 @@ public class UsuarioController {
         response.setTelefono(usuario.getTelefono());
         response.setDireccion(usuario.getDireccion());
         response.setComuna(usuario.getComuna());
+        response.setRegion(usuario.getRegion().toString());
         response.setRol(usuario.getRol());
         return response;
     }
