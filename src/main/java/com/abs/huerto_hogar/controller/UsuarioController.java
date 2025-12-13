@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -271,4 +272,24 @@ public class UsuarioController {
         response.setRol(usuario.getRol());
         return response;
     }
+
+    @Operation(summary = "Obtener foto de perfil", description = "Devuelve la foto de perfil del usuario como bytes (jpg/png según lo que se haya guardado).")
+    @GetMapping("/{id}/foto-perfil")
+    public ResponseEntity<byte[]> obtenerFotoPerfil(@PathVariable Long id) {
+        try {
+            byte[] foto = usuarioService.obtenerFotoPerfil(id);
+
+            if (foto == null || foto.length == 0) {
+                return ResponseEntity.noContent().build();
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(foto);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
 }
