@@ -86,6 +86,8 @@ public class SecurityConfig {
                                                 .hasAnyAuthority("ROLE_usuario", "ROLE_admin")
                                                 .requestMatchers(HttpMethod.PUT, "/api/usuario/**")
                                                 .hasAnyAuthority("ROLE_admin", "ROLE_usuario")
+                                                .requestMatchers(HttpMethod.GET, "/api/usuario/*/foto-perfil")
+                                                .hasAnyAuthority("ROLE_usuario", "ROLE_admin")
 
                                                 // Rutas exclusivas para admin
 

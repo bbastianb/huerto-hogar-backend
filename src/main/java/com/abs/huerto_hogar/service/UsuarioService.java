@@ -293,4 +293,11 @@ public class UsuarioService {
         usuario.setFotoPerfil(null);
         return usuarioRepository.save(usuario);
     }
+
+    public byte[] obtenerFotoPerfil(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no existe."));
+        return usuario.getFotoPerfil();
+    }
+
 }
